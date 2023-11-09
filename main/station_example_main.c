@@ -1,72 +1,26 @@
-/* WiFi station Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-#include <string.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "nvs_flash.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
+#include "esp_http_client.h"
 
-/* The examples use WiFi configuration that you can set via project configuration menu
-   If you'd rather not, just change the below entries to strings with the config you want.
-   For this example, it uses the "menuconfig" parameters for SSID and PASSWORD.
-*/
+#define WEB_SERVER "www.example.com"
+#define WEB_PORT "80"
+#define WEB_URL "http://www.example.com/"
+
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
-#define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
-#if CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK
-#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
-#define EXAMPLE_H2E_IDENTIFIER ""
-#elif CONFIG_ESP_WPA3_SAE_PWE_HASH_TO_ELEMENT
-#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HASH_TO_ELEMENT
-#define EXAMPLE_H2E_IDENTIFIER CONFIG_ESP_WIFI_PW_ID
-#elif CONFIG_ESP_WPA3_SAE_PWE_BOTH
-#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_BOTH
-#define EXAMPLE_H2E_IDENTIFIER CONFIG_ESP_WIFI_PW_ID
-#endif
 
-#if CONFIG_ESP_WIFI_AUTH_OPEN
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
-#elif CONFIG_ESP_WIFI_AUTH_WEP
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
-#elif CONFIG_ESP_WIFI_AUTH_WPA_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
-#elif CONFIG_ESP_WIFI_AUTH_WPA2_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
-#elif CONFIG_ESP_WIFI_AUTH_WPA_WPA2_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
-#elif CONFIG_ESP_WIFI_AUTH_WPA3_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
-#elif CONFIG_ESP_WIFI_AUTH_WPA2_WPA3_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
-#elif CONFIG_ESP_WIFI_AUTH_WAPI_PSK
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
-#endif
-
-/* FreeRTOS event group to signal when we are connected and when there is no connection */
 static EventGroupHandle_t s_wifi_event_group;
-
-/* Define event bits to signal Wi-Fi status */
 #define WIFI_CONNECTED_BIT     BIT0
 #define WIFI_FAIL_BIT          BIT1
+static const char *TAG = "WIFI";
+
 #define WIFI_NO_CONNECTION_BIT BIT2
-
-static const char *TAG = "wifi station";
-
-static int s_retry_num = 0;
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                          int32_t event_id, void* event_data)
@@ -74,21 +28,79 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
-        } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT | WIFI_NO_CONNECTION_BIT);
-        }
-        ESP_LOGI(TAG, "connect to the AP fail");
+        esp_wifi_connect();
+        xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT | WIFI_NO_CONNECTION_BIT);
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-        s_retry_num = 0;
+        xEventGroupClearBits(s_wifi_event_group, WIFI_NO_CONNECTION_BIT);
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
+
+
+
+void http_get_task(void *pvParameters)
+{
+    while(1) {
+        EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+                WIFI_CONNECTED_BIT,
+                pdFALSE,
+                pdFALSE,
+                portMAX_DELAY);
+
+        if(bits & WIFI_CONNECTED_BIT) {
+            ESP_LOGI(TAG, "connected to AP SSID:%s password:%s",
+                     EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+
+            esp_http_client_config_t config = {
+    .url = WEB_URL,
+    .timeout_ms = 20000,  // Set timeout to 10 seconds (or higher)
+};
+
+        
+
+
+
+            esp_http_client_handle_t client = esp_http_client_init(&config);
+
+            esp_err_t err = esp_http_client_perform(client);
+
+            if(err == ESP_OK) {
+                ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %lld",
+                         esp_http_client_get_status_code(client),
+                         esp_http_client_get_content_length(client));
+
+                // Read the response
+char *buffer;
+int content_length = esp_http_client_get_content_length(client);
+if (content_length > 0) {
+    buffer = malloc(content_length + 1); // Allocate memory for the buffer
+    if (buffer != NULL) {
+        int read_len = esp_http_client_read(client, buffer, content_length);
+        if(read_len == content_length) {
+            buffer[read_len] = '\0'; // Null-terminate the string
+            ESP_LOGI(TAG, "Read %d bytes: %s", read_len, buffer); // Print the response
+        } else {
+            ESP_LOGE(TAG, "Error reading response");
+        }
+        free(buffer); // Free the buffer
+    } else {
+        ESP_LOGE(TAG, "Could not allocate memory for the buffer");
+    }
+} else {
+    ESP_LOGE(TAG, "Invalid content length");
+}
+
+            }else {
+                ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+            }
+
+            esp_http_client_cleanup(client);
+        }
+
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+    }
+}
+
 
 void wifi_init_sta(void)
 {
@@ -118,10 +130,7 @@ void wifi_init_sta(void)
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .password = EXAMPLE_ESP_WIFI_PASS,
-            .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
-            .sae_pwe_h2e = ESP_WIFI_SAE_MODE,
-            .sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
+            .password = EXAMPLE_ESP_WIFI_PASS
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -177,6 +186,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
+    xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 6, NULL);
 
     xTaskCreate(&led_blink_task, "led_blink_task", 2048, NULL, 5, NULL);
 }
