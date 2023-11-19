@@ -6,102 +6,167 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/dns.h"
+#include "sdkconfig.h"
 
-#define WEB_SERVER "www.example.com"
+// request data
+#define WEB_SERVER "example.com"
 #define WEB_PORT "80"
-#define WEB_URL "http://www.example.com/"
+#define WEB_PATH "/"
 
-#define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
+// wifi keys
+#define EXAMPLE_ESP_WIFI_SSID      "STUPKI"
+#define EXAMPLE_ESP_WIFI_PASS      "kochamstopy"
 
-
-static EventGroupHandle_t s_wifi_event_group;
+// connection bits
 #define WIFI_CONNECTED_BIT     BIT0
 #define WIFI_FAIL_BIT          BIT1
-static const char *TAG = "WIFI";
-
 #define WIFI_NO_CONNECTION_BIT BIT2
 
+static EventGroupHandle_t s_wifi_event_group;
+
+static const char *TAG = "IOT PROJECT";
+
+static bool is_connected = false;
+
+
+/// Event handler for wfi connection monitoring.
 static void event_handler(void* arg, esp_event_base_t event_base,
                          int32_t event_id, void* event_data)
 {
+    // Connected to wifi
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
+
+    // Disconnected
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
         xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT | WIFI_NO_CONNECTION_BIT);
+        is_connected = false;
+
+    // Got ip
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         xEventGroupClearBits(s_wifi_event_group, WIFI_NO_CONNECTION_BIT);
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+        is_connected = true;
     }
 }
 
 
 
-void http_get_task(void *pvParameters)
+// Attempts to send HTTP request.
+static void http_get_task(void *pvParameters)
 {
+    const static struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+    };
+
+    struct addrinfo *res;
+    struct in_addr *addr;
+    int socket_id, read_res;
+    char recv_buf[64];
+
     while(1) {
-        EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-                WIFI_CONNECTED_BIT,
-                pdFALSE,
-                pdFALSE,
-                portMAX_DELAY);
+        EventBits_t bits = xEventGroupGetBits(s_wifi_event_group);
 
-        if(bits & WIFI_CONNECTED_BIT) {
-            ESP_LOGI(TAG, "connected to AP SSID:%s password:%s",
-                     EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
-
-            esp_http_client_config_t config = {
-    .url = WEB_URL,
-    .timeout_ms = 20000,  // Set timeout to 10 seconds (or higher)
-};
-
-        
-
-
-
-            esp_http_client_handle_t client = esp_http_client_init(&config);
-
-            esp_err_t err = esp_http_client_perform(client);
-
-            if(err == ESP_OK) {
-                ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %lld",
-                         esp_http_client_get_status_code(client),
-                         esp_http_client_get_content_length(client));
-
-                // Read the response
-char *buffer;
-int content_length = esp_http_client_get_content_length(client);
-if (content_length > 0) {
-    buffer = malloc(content_length + 1); // Allocate memory for the buffer
-    if (buffer != NULL) {
-        int read_len = esp_http_client_read(client, buffer, content_length);
-        if(read_len == content_length) {
-            buffer[read_len] = '\0'; // Null-terminate the string
-            ESP_LOGI(TAG, "Read %d bytes: %s", read_len, buffer); // Print the response
-        } else {
-            ESP_LOGE(TAG, "Error reading response");
+        if(bits &WIFI_NO_CONNECTION_BIT){
+            vTaskDelay(1000 / portTICK_PERIOD_MS);//zeby nie probowac nawiazac polaczenia przy braku wifi
+            continue;
         }
-        free(buffer); // Free the buffer
-    } else {
-        ESP_LOGE(TAG, "Could not allocate memory for the buffer");
-    }
-} else {
-    ESP_LOGE(TAG, "Invalid content length");
-}
 
-            }else {
-                ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+
+        int err = getaddrinfo(WEB_SERVER, WEB_PORT, &hints, &res);
+
+        if(err != 0 || res == NULL) {
+            ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        /* Code to print the resolved IP.
+
+           Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
+        addr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
+        ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
+
+        socket_id = socket(res->ai_family, res->ai_socktype, 0);
+        if(socket_id < 0) {
+            ESP_LOGE(TAG, "... Failed to allocate socket.");
+            freeaddrinfo(res);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
+        ESP_LOGI(TAG, "... allocated socket");
+
+        if(connect(socket_id, res->ai_addr, res->ai_addrlen) != 0) {
+            ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
+            close(socket_id);
+            freeaddrinfo(res);
+            vTaskDelay(4000 / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        ESP_LOGI(TAG, "... connected");
+        freeaddrinfo(res);
+
+        static const char *REQUEST = "GET " WEB_PATH " HTTP/1.0\r\n"
+                                    "Host: "WEB_SERVER":"WEB_PORT"\r\n"
+                                    "User-Agent: esp-idf/1.0 esp32\r\n"
+                                    "\r\n";
+
+        if (write(socket_id, REQUEST, strlen(REQUEST)) < 0) {
+            ESP_LOGE(TAG, "... socket send failed");
+            close(socket_id);
+            vTaskDelay(4000 / portTICK_PERIOD_MS);
+            continue;
+        }
+        ESP_LOGI(TAG, "... socket send success");
+
+        struct timeval receiving_timeout;
+        receiving_timeout.tv_sec = 5;
+        receiving_timeout.tv_usec = 0;
+        if (setsockopt(socket_id, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout,
+                sizeof(receiving_timeout)) < 0) {
+            ESP_LOGE(TAG, "... failed to set socket receiving timeout");
+            close(socket_id);
+            vTaskDelay(4000 / portTICK_PERIOD_MS);
+            continue;
+        }
+        ESP_LOGI(TAG, "... set socket receiving timeout success");
+
+        /* Read HTTP response */
+        do {
+            bzero(recv_buf, sizeof(recv_buf));
+            read_res = read(socket_id, recv_buf, sizeof(recv_buf)-1);
+            for(int i = 0; i < read_res; i++) {
+                putchar(recv_buf[i]);
             }
+        } while(read_res > 0);
 
-            esp_http_client_cleanup(client);
+        ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d.", read_res, errno);
+        close(socket_id);
+        for(int countdown = 10; countdown >= 0; countdown--) {
+            ESP_LOGI(TAG, "%d... ", countdown);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+            bits = xEventGroupGetBits(s_wifi_event_group);
+
+            if(bits &WIFI_NO_CONNECTION_BIT){
+                ESP_LOGI(TAG, "Connection lost. Waiting for connection...");
+                break;
+            }
         }
+        ESP_LOGI(TAG, "Starting again!");
 
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
 
-
+// Init wifi connection
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
@@ -156,6 +221,7 @@ void wifi_init_sta(void)
     }
 }
 
+// Starts to monitor connection and adjusts LED blinking to it.
 void led_blink_task(void *pvParameter)
 {
     while (1) {
@@ -167,7 +233,7 @@ void led_blink_task(void *pvParameter)
             gpio_set_level(GPIO_NUM_2, 0); // Turn off the LED on GPIO 2
             vTaskDelay(pdMS_TO_TICKS(500));  // Delay for 500 ms
         } else {
-            vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for 1 second if there's a Wi-Fi connection
+            vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 1 second if there's a Wi-Fi connection
         }
     }
 }
@@ -186,7 +252,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
-    xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 6, NULL);
+    xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
 
     xTaskCreate(&led_blink_task, "led_blink_task", 2048, NULL, 5, NULL);
 }
