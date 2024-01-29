@@ -1,0 +1,9 @@
+.home__head
+{
+  height: 30vh;
+  background-color: var(--bs-primary);
+}
+
+.home__buttons {
+  height: 70vh;
+}

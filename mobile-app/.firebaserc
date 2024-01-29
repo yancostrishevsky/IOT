@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "server-room-monitoring-fe8b6": {
+      "hosting": {
+        "mobile-app": [
+          "server-room-monitoring-fe8b6"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "server-room-monitoring-fe8b6"
+  }
+}
