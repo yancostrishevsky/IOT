@@ -1,6 +1,6 @@
 {
     "idf.adapterTargetName": "esp32",
-    "python.defaultInterpreterPath": "${workspaceFolder}/app/venv/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/server/venv/bin/python",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.autoFormatStrings": true
 }
