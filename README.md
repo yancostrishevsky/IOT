@@ -13,6 +13,6 @@ server: # contains sources for server transmitting messages from mqtt broker to 
 
 ```sh
 cd mqtt
-sudo ./generate_passwords.bash
-docker-compose up -d
+# Requires docker installed
+bash setup_mqtt_broker.bash
 ```

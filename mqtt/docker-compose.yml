@@ -2,7 +2,7 @@ version: "3.7"
 services:
   # mqtt5 eclipse-mosquitto
   mqtt5:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:2.0.14
     container_name: mosquitto-docker
     restart: always
     ports:
@@ -21,4 +21,4 @@ volumes:
 
 networks:
   default:
-    name: mqtt5-network
+    name: net1
