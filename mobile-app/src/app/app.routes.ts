@@ -4,11 +4,13 @@ import { MeasurementsDevicesComponent } from './components/measurements-devices/
 import { ConfigureDevicesComponent } from './components/configure-devices/configure-devices.component';
 import { SignInComponent } from './components/sign-in/sign-in.component';
 import { SignUpComponent } from './components/sign-up/sign-up.component';
+import { MeasurementsComponent } from './components/measurements/measurements.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'home', component: HomeComponent },
-  { path: 'measurements-devices', component: MeasurementsDevicesComponent },
+  { path: 'measurements', component: MeasurementsDevicesComponent },
+  { path: 'measurements/:name', component: MeasurementsComponent },
   { path: 'configure-devices', component: ConfigureDevicesComponent },
   { path: 'sign-in', component: SignInComponent },
   { path: 'sign-up', component: SignUpComponent }

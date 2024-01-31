@@ -3,4 +3,11 @@
   height: 20vh;
 }
 
+.measurementsDevices__devices
+{
+  list-style-type: none;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
 

@@ -8,10 +8,12 @@
 
 <div class="measurementsDevices__main container-fluid">
 
-  <h1 class="fw-light text-center text-secondary border-bottom p-3">select device</h1>
+  <h1 class="fw-light text-center text-secondary border-bottom p-3 mb-4">select device</h1>
 
-  <ul>
-
+  <ul class="measurementsDevices__devices d-flex flex-column align-items-center gap-2">
+    <li class="w-75" *ngFor="let device of getAvailableDevices()">
+      <a [routerLink]="['/measurements', device?.name]" routerLinkActive="active" class="p-3 w-100 border rounded text-center btn btn-outline-primary">{{device?.name}}</a>
+    </li>
   </ul>
 
 </div>
