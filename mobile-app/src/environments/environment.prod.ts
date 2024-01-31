@@ -8,7 +8,7 @@ export const environment = {
     projectId: "server-room-monitoring-fe8b6",
     storageBucket: "server-room-monitoring-fe8b6.appspot.com",
     messagingSenderId: "247588525344",
-    appId: "1:247588525344:web:ae237c713fcb2b516c7345",
-    measurementId: "G-JKW2F42S92"
+    appId: "1:247588525344:web:5de4422e041ff2666c7345",
+    measurementId: "G-XFB96HWV37"
   }
 };

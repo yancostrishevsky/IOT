@@ -9,5 +9,9 @@ import { environment } from '../environments/environment.prod';
 import {FIREBASE_OPTIONS} from '@angular/fire/compat';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), importProvidersFrom(provideFirebaseApp(() => initializeApp(environment.firebaseConfig))), importProvidersFrom(provideAuth(() => getAuth())), importProvidersFrom(provideDatabase(() => getDatabase())), { provide: FIREBASE_OPTIONS, useValue: environment.firebaseConfig }]
+  providers: [provideRouter(routes), importProvidersFrom(provideFirebaseApp(() => initializeApp(environment.firebaseConfig))),
+    importProvidersFrom(provideAuth(() => getAuth())),
+    importProvidersFrom(provideDatabase(() => getDatabase())),
+
+    { provide: FIREBASE_OPTIONS, useValue: environment.firebaseConfig }]
 };
