@@ -1,7 +1,0 @@
-{
-  "C_Cpp.intelliSenseEngine": "default",
-  "files.associations": {
-    "ctime": "c"
-  },
-  "idf.adapterTargetName": "esp32"
-}
