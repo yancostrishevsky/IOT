@@ -16,3 +16,10 @@ cd mqtt
 # Requires docker installed
 bash setup_mqtt_broker.bash
 ```
+
+# Starting server
+
+```sh
+cd server
+bash setup_server.bash
+```

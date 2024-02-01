@@ -9,18 +9,11 @@ from src import database_pusher
 
 HOME_PATH = pathlib.Path(__file__).absolute().parent.as_posix()
 
-INTER_CONNECTIONS_TIMEOUT = 1
+INTER_CONNECTIONS_TIMEOUT = 10
 BROKER_ADDRESS = "192.168.50.74"
 PORT = 8126
 USER = "server"
 PASSWORD = "admin123"
-
-
-def on_message(client: paho_client.Client, userdata, message: paho_client.MQTTMessage):
-    """Handler for receiving messages from mqtt broker."""
-
-    logging.debug("Received message from topic %s: %s",
-                  message.topic, message.payload.decode())
 
 
 if __name__ == "__main__":
