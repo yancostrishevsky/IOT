@@ -10,27 +10,41 @@
 #include <wifi_provisioning/manager.h>
 #include <wifi_provisioning/scheme_ble.h>
 #include <stdlib.h>
-#include <string.h>
 #include "ssd1306.h"
 #include "font8x8_basic.h"
 #include <dht.h>
 #include "mqtt_client.h"
+#include "driver/gpio.h"
+#include "esp_timer.h"
+#include <math.h>
 #define SENSOR_TYPE DHT_TYPE_DHT11
 #define DHT_GPIO_PIN GPIO_NUM_18
 #define tag "SSD1306"
 #define CONFIG_SDA_GPIO  21
 #define CONFIG_SCL_GPIO  22
 #define CONFIG_RESET_GPIO  15
+#define TRIG_PIN 25
+#define ECHO_PIN 34
+#define BUZZER_PIN 32
+#define SOUND_SPEED 0.034
+#define MOVEMENT_THRESHOLD 10.0 
+#define MEASUREMENT_DELAY 500  
+#define BUTTON_PIN GPIO_NUM_0
+
+
+
+
+
+
 static const char *TAG = "app";
 
 static EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_EVENT = BIT0;
 
 const esp_mqtt_client_config_t mqtt_cfg = {
-    .broker.address.hostname = "192.168.100.15", // Zmień na adres Twojego brokera MQTT
-    .broker.address.port = 1883, // Standardowy port MQTT
-    .broker.address.transport = MQTT_TRANSPORT_OVER_TCP, // Transport TCP (dla MQTTS użyj MQTT_TRANSPORT_OVER_SSL)
-    // Inne opcjonalne konfiguracje, jak certyfikaty, użytkownik, hasło itp.
+    .broker.address.hostname = "192.168.100.15", 
+    .broker.address.port = 1883, 
+    .broker.address.transport = MQTT_TRANSPORT_OVER_TCP, 
 };
 esp_mqtt_client_handle_t client = NULL;
 
@@ -112,6 +126,49 @@ void dht_test(void *pvParameters)
     }
 }
 
+
+static void ultrasonic_sensor_task(void *pvParameters) {
+    gpio_set_direction(TRIG_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(ECHO_PIN, GPIO_MODE_INPUT);
+    gpio_set_direction(BUZZER_PIN, GPIO_MODE_OUTPUT);
+
+    long duration;
+    float distanceCm;
+    float lastDistanceCm = 0;
+
+    while (1) {
+        gpio_set_level(TRIG_PIN, 0);
+        vTaskDelay(2 / portTICK_PERIOD_MS); 
+        gpio_set_level(TRIG_PIN, 1);
+        esp_rom_delay_us(10); 
+        gpio_set_level(TRIG_PIN, 0);
+
+    
+        int64_t start_time = esp_timer_get_time();
+        while (gpio_get_level(ECHO_PIN) == 0); 
+        int64_t signal_start = esp_timer_get_time();
+        while (gpio_get_level(ECHO_PIN) == 1); 
+        int64_t signal_end = esp_timer_get_time();
+        duration = signal_end - signal_start; 
+
+        distanceCm = (duration * SOUND_SPEED) / 2.0;
+
+        if (fabs(distanceCm - lastDistanceCm) > MOVEMENT_THRESHOLD) {
+            printf("Ruch wykryty! W odleglosci: %.2f cm\n", distanceCm);
+            gpio_set_level(BUZZER_PIN, 1); 
+            vTaskDelay(1000 / portTICK_PERIOD_MS); 
+            gpio_set_level(BUZZER_PIN, 0);
+        } else {
+            printf("Brak ruchu w odleglosci (cm): %.2f\n", distanceCm);
+        }
+
+        lastDistanceCm = distanceCm;
+        vTaskDelay(MEASUREMENT_DELAY / portTICK_PERIOD_MS);
+    }
+}
+
+
+
 void app_main(void) {
 
 
@@ -122,6 +179,12 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    gpio_reset_pin(BUTTON_PIN);
+    gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
+    gpio_pullup_en(BUTTON_PIN);
+
+    xTaskCreate(ultrasonic_sensor_task, "ultrasonic_sensor_task", 4096, NULL, 5, NULL);
 
     wifi_event_group = xEventGroupCreate();
 
