@@ -48,6 +48,16 @@ const esp_mqtt_client_config_t mqtt_cfg = {
 };
 esp_mqtt_client_handle_t client = NULL;
 
+static void handle_wifi_reconnect(void) {
+    ESP_LOGI(TAG, "Trying to reconnect to the WiFi network...");
+    esp_wifi_connect();
+}
+
+static void handle_mqtt_reconnect(esp_mqtt_client_handle_t client) {
+    ESP_LOGI(TAG, "Trying to reconnect to the MQTT broker...");
+    esp_mqtt_client_reconnect(client);
+}
+
 
 
 
@@ -75,13 +85,37 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             default:
                 break;
         }
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                esp_wifi_connect();
+                break;
+            case WIFI_EVENT_STA_DISCONNECTED:
+                ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
+                esp_wifi_connect();
+                xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_EVENT); 
+                break;
+            default:
+                break;
+        }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ESP_LOGI(TAG, "Connected with IP Address");
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
     }
 }
+
+static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
+    esp_mqtt_client_handle_t client = event->client;
+    switch (event->event_id) {
+        case MQTT_EVENT_DISCONNECTED:
+            handle_mqtt_reconnect(client);
+            break;
+        default:
+            break;
+    }
+    return ESP_OK;
+}
+
 
 static void wifi_init_sta(void) {
     esp_wifi_set_mode(WIFI_MODE_STA);
@@ -216,6 +250,7 @@ void app_main(void) {
 	char lineChar[20];
 
     client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
     xTaskCreate(dht_test, "dht_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     while (1) {

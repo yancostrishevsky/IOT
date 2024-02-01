@@ -26,7 +26,7 @@ void ssd1306_init(SSD1306_t * dev, int width, int height)
 	}
 	// Initialize internal buffer
 	for (int i=0;i<dev->_pages;i++) {
-		memset(dev->_page[i]._segs, 0, 128);
+		memset(dev->_page[i]._segs, 0, 130);
 	}
 }
 
