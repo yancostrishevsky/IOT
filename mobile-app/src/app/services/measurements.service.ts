@@ -24,8 +24,8 @@ export class MeasurementsService {
 
         const measurementsForDevice = data[key];
 
-        const humidityForDevice = measurementsForDevice.humidity;
-        const temperatureForDevice = measurementsForDevice.temperature;
+        const humidityForDevice = measurementsForDevice.humidity || {};
+        const temperatureForDevice = measurementsForDevice.temperature || {};
 
         const flattenedHumidity: HumidityMeasurement[] = [];
 

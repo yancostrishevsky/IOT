@@ -12,7 +12,12 @@
 
   <ul class="measurementsDevices__devices d-flex flex-column align-items-center gap-2">
     <li class="w-75" *ngFor="let device of getAvailableDevices()">
-      <a [routerLink]="['/measurements', device?.name]" routerLinkActive="active" class="p-3 w-100 border rounded text-center btn btn-outline-primary">{{device?.name}}</a>
+      <a [routerLink]="['/measurements', device?.name]" routerLinkActive="active" class="p-3 py-5 w-100 border rounded text-center btn btn-outline-primary">
+        <div class="d-flex flex-column justify-content-center align-items-center display-6">
+        <span>{{device?.name}}</span>
+        <i class="bi bi-cpu"></i>
+        </div>
+      </a>
     </li>
   </ul>
 
