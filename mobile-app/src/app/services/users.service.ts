@@ -29,6 +29,8 @@ export class UsersService {
           user.availableDevices = [];
         }
 
+        user.id = parseInt(key);
+
         this.users.push(user);
       });
 
@@ -49,7 +51,6 @@ export class UsersService {
 
 
   }
-
 
   getCurrentUser(): User | null {
     return this.currentUser;
@@ -80,8 +81,6 @@ export class UsersService {
 
   createUser(email: string, nick: string) {
 
-
-
     const nextId = this.getNextId();
 
     this.db.object('users/' + nextId).set({
@@ -93,5 +92,13 @@ export class UsersService {
 
   getUser(id: number): User | null {
     return this.users.find((user: User) => user.id == id) || null;
+  }
+
+  getUsers(): User[] {
+    return this.users;
+  }
+
+  deleteOwnership(user: User, deviceName: string) {
+    this.db.object('users/' + user.id + '/availableDevices').set(user.availableDevices.filter((device: string) => device != deviceName));
   }
 }

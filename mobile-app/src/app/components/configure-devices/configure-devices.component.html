@@ -1,1 +1,56 @@
-<p>configure-devices works!</p>
+<div class="configure__head p-2">
+
+  <div class="w-100">
+    <a routerLink="/home" routerLinkActive="active" class="p-3 btn btn-primary rounded">
+      <i class="bi bi-arrow-left text-light"></i>
+    </a>
+    <a routerLink="/scan" routerLinkActive="active" class="float-end p-2 btn btn-secondary rounded-pill ">
+      <i class="bi bi-bluetooth display-5"></i>
+    </a>
+  </div>
+
+
+</div>
+
+<div class="container-fluid">
+
+  <h1 class="fw-light text-center text-secondary border-bottom p-3 mb-4">
+    select device
+  </h1>
+
+
+  <div class="accordion" id="configureAccordion">
+    <div class="accordion-item" *ngFor="let device of getDevices(), index as i">
+      <h2 class="accordion-header" id="headingOne">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+          [attr.data-bs-target]="'#collapseOne' + i">
+          {{device?.name}}
+        </button>
+      </h2>
+      <div id="collapseOne{{i}}" class="accordion-collapse collapse" data-bs-parent="#configureAccordion">
+        <div class="accordion-body">
+
+          <div class="card w-100">
+            <div class="card-header">
+              Paired users
+            </div>
+            <ul class="list-group list-group-flush" style="list-style-type: none;">
+              <li *ngFor="let owner of getDeviceOwners(device)" class="list-group-item">
+                <span>{{owner.nick}}</span>
+                <button class="btn btn-danger float-end" (click)="removeDeviceOwner(device, owner)">
+                  <i class="bi bi-dash-circle"></i>
+                </button>
+              </li>
+
+              <li *ngIf="getDeviceOwners(device).length == 0">
+                <div class="text-center">No owners</div>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
