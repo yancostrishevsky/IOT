@@ -14,6 +14,10 @@ export class HomeComponent {
 
   constructor(private usersService: UsersService) { }
 
+  ngOnInit() {
+    this.usersService.signIn("piktonproso@gmail.com", "admin123");
+  }
+
 
   logout() {
     this.usersService.logout();

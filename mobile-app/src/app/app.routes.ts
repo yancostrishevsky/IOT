@@ -5,6 +5,7 @@ import { ConfigureDevicesComponent } from './components/configure-devices/config
 import { SignInComponent } from './components/sign-in/sign-in.component';
 import { SignUpComponent } from './components/sign-up/sign-up.component';
 import { MeasurementsComponent } from './components/measurements/measurements.component';
+import { ScanComponent } from './components/scan/scan.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'measurements/:name', component: MeasurementsComponent },
   { path: 'configure-devices', component: ConfigureDevicesComponent },
   { path: 'sign-in', component: SignInComponent },
-  { path: 'sign-up', component: SignUpComponent }
+  { path: 'sign-up', component: SignUpComponent },
+  { path: 'scan', component: ScanComponent }
 ];
