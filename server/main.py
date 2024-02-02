@@ -9,8 +9,8 @@ from src import database_pusher
 
 HOME_PATH = pathlib.Path(__file__).absolute().parent.as_posix()
 
-INTER_CONNECTIONS_TIMEOUT = 10
-BROKER_ADDRESS = "192.168.50.74"
+INTER_CONNECTIONS_TIMEOUT = 5
+BROKER_ADDRESS = "127.0.0.1"
 PORT = 8126
 USER = "server"
 PASSWORD = "admin123"
