@@ -31,8 +31,10 @@
 #define MEASUREMENT_DELAY 500  
 #define BUTTON_PIN GPIO_NUM_0
 
-
-
+// MQTT configuration
+// [device_id]/temperature - float
+// [device_id]/humidity - float
+// [device_id]/movement - float
 
 
 
