@@ -26,18 +26,21 @@ class MqttConnection:
             self._client = paho_client.Client("PythonServer")  # create new instance
 
             self._client.username_pw_set(
-                self._config['user'], password=self._config['password'])  # set username and password
+                self._config["user"], password=self._config["password"]
+            )  # set username and password
             self._client.on_connect = self._on_connect  # attach function to callback
             self._client.on_message = self._on_message_callback
             self._client.on_disconnect = self._on_disconnect
 
             self._client.connect(
-                self._config['broker_address'], self._config['port'])  # connect to broker
+                self._config["broker_address"], self._config["port"]
+            )  # connect to broker
 
             self._client.loop_start()  # start the loop
 
             self._client.subscribe("+/humidity")
             self._client.subscribe("+/temperature")
+            self._client.subscribe("+/movement")
 
             time.sleep(3)
 

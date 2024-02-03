@@ -4,18 +4,21 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanResult;
 import android.os.ParcelUuid;
 
+import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.listeners.BleScanListener;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 
 import java.io.Console;
 
-public class GattListener implements BleScanListener {
+public class GattConnector implements BleScanListener {
 
-  final private JSArray devices_ = new JSArray();
+  JSObject device_;
+  ESPProvisionManager manager_;
 
-  JSArray getDevices() {
-    return devices_;
+  GattConnector(JSObject device, ESPProvisionManager manager) {
+    device_ = device;
+    manager_ = manager;
   }
 
   @Override
@@ -25,13 +28,16 @@ public class GattListener implements BleScanListener {
   public void onPeripheralFound(BluetoothDevice device, ScanResult scanResult) {
     System.out.println(device.getName());
     System.out.println(device.getAddress());
-//    System.out.println(scanResult.getScanRecord().getServiceUuids().get(0).toString());
+    System.out.println(device_.getString("address"));
+//
 
-    JSObject deviceObj = new JSObject();
-    deviceObj.put("name", device.getName());
-    deviceObj.put("address", device.getAddress());
+    if(device_.getString("address").equals(device.getAddress())){
 
-    devices_.put(deviceObj);
+      String primaryUuid = scanResult.getScanRecord().getServiceUuids().get(0).toString();
+      manager_.getEspDevice().connectBLEDevice(device, primaryUuid);
+
+    }
+
   }
 
   @Override
