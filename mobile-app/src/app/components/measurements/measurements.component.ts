@@ -49,17 +49,19 @@ export class MeasurementsComponent {
   }
 
   timestampToDate(timestamp: number) {
-    return new Date(Math.round(timestamp * 1000));
+    const date = new Date(Math.round(timestamp * 1000));
+
+    return date.toISOString().split('T')[0] + ' ' + date.toISOString().split('T')[1].split('.')[0];
   }
 
   updateHumidityChart() {
     if (this.measurements) {
 
       const humidityData = this.measurements.humidity;
-      const labels = humidityData.map((measurement: HumidityMeasurement) => this.timestampToDate(measurement.timestamp).toISOString().split('T')[0] );
+      const labels = humidityData.map((measurement: HumidityMeasurement) => this.timestampToDate(measurement.timestamp));
       const values = humidityData.map((measurement: HumidityMeasurement) => measurement.value);
 
-      this.humidityChart = new Chart('humidityChart',{
+      this.humidityChart = new Chart('humidityChart', {
         type: 'bar',
         data: {
           labels: labels,
@@ -81,7 +83,7 @@ export class MeasurementsComponent {
             }
           },
           responsive: true,
-            maintainAspectRatio: false
+          maintainAspectRatio: false
         }
       });
     }
@@ -89,13 +91,12 @@ export class MeasurementsComponent {
 
   updateTemperatureChart() {
 
-    if(this.measurements)
-    {
+    if (this.measurements) {
       const temperatureData = this.measurements.temperature;
-      const labels = temperatureData.map((measurement: HumidityMeasurement) => this.timestampToDate(measurement.timestamp).toISOString().split('T')[0] );
+      const labels = temperatureData.map((measurement: HumidityMeasurement) => this.timestampToDate(measurement.timestamp));
       const values = temperatureData.map((measurement: HumidityMeasurement) => measurement.value);
 
-      this.temperatureChart = new Chart('temperatureChart',{
+      this.temperatureChart = new Chart('temperatureChart', {
         type: 'line',
         data: {
           labels: labels,
@@ -116,7 +117,7 @@ export class MeasurementsComponent {
             }
           },
           responsive: true,
-            maintainAspectRatio: false
+          maintainAspectRatio: false
         }
       });
     }
@@ -130,40 +131,32 @@ export class MeasurementsComponent {
     return ((this.measurements?.temperature.length || 0) * 100) + 'px';
   }
 
-  getLastHumidityDate(): string | null
-  {
-    if(this.measurements)
-    {
-      return this.timestampToDate(this.measurements.humidity[this.measurements.humidity.length - 1].timestamp).toISOString().split('T')[0] + ' ' + this.timestampToDate(this.measurements.humidity[this.measurements.humidity.length - 1].timestamp).toISOString().split('T')[1].split('.')[0];
+  getLastHumidityDate(): string | null {
+    if (this.measurements) {
+      return this.timestampToDate(this.measurements.humidity[this.measurements.humidity.length - 1].timestamp);
     }
 
     return null;
   }
 
-  getLastHumidity(): number | null
-  {
-    if(this.measurements?.temperature != null)
-    {
+  getLastHumidity(): number | null {
+    if (this.measurements?.temperature != null) {
       return this.measurements.humidity[this.measurements.humidity.length - 1].value;
     }
 
     return null;
   }
 
-  getLastTemperatureDate(): string | null
-  {
-    if(this.measurements)
-    {
-      return this.timestampToDate(this.measurements.temperature[this.measurements.temperature.length - 1].timestamp).toISOString().split('T')[0] + ' ' + this.timestampToDate(this.measurements.temperature[this.measurements.temperature.length - 1].timestamp).toISOString().split('T')[1].split('.')[0];
+  getLastTemperatureDate(): string | null {
+    if (this.measurements) {
+      return this.timestampToDate(this.measurements.temperature[this.measurements.temperature.length - 1].timestamp);
     }
 
     return null;
   }
 
-  getLastTemperature(): number | null
-  {
-    if(this.measurements?.temperature != null)
-    {
+  getLastTemperature(): number | null {
+    if (this.measurements?.temperature != null) {
       return this.measurements.temperature[this.measurements.temperature.length - 1].value;
     }
 

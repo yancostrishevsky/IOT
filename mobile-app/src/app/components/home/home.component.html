@@ -1,13 +1,15 @@
 <div class="home__head d-flex align-items-center justify-content-center container-fluid">
 
-  <h1 *ngIf="currentUser() == null" class="text-light d-flex justify-content-center"><span class="fw-light">Welcome to </span>
-    <span class="fw-bold">ServerRoomMonitor!</span></h1>
+  <h1 *ngIf="currentUser() == null" class="text-light d-flex flex-column align-items-center justify-content-center">
+    <span class="fw-light">Welcome to </span>
+    <span class="fw-bold">ServerRoomMonitor!</span>
+  </h1>
 
-    <h1 *ngIf="currentUser() != null" class="text-center text-light"><span class="fw-light">Welcome to </span>
-      <span class="fw-bold">ServerRoomMonitor</span>,
-      {{currentUser()?.nick}}!
+  <h1 *ngIf="currentUser() != null" class="text-center text-light"><span class="fw-light">Welcome to </span>
+    <span class="fw-bold">ServerRoomMonitor</span>,
+    {{currentUser()?.nick}}!
 
-    </h1>
+  </h1>
 </div>
 
 <div class="home__main container-fluid">
@@ -17,13 +19,19 @@
       <div class="home__buttons py-5 d-flex flex-column gap-5 align-items-center justify-content-center">
 
 
-        <a *ngIf="currentUser() != null" routerLink="/measurements" routerLinkActive="active" class="shadow w-50 p-4 btn btn-primary rounded">measurements</a>
-        <a *ngIf="currentUser() != null" routerLink="/configure-devices" routerLinkActive="active" class="shadow w-50 p-4 btn btn-primary rounded">configure devices</a>
-        <a *ngIf="currentUser() == null" routerLink="/sign-in" routerLinkActive="active" class="w-50 p-4 btn btn-outline-primary border border-primary rounded">sign in</a>
+        <a *ngIf="currentUser() != null" routerLink="/measurements" routerLinkActive="active"
+          class="shadow w-50 p-4 btn btn-primary rounded">measurements</a>
+        <a *ngIf="currentUser() != null" routerLink="/configure-devices" routerLinkActive="active"
+          class="shadow w-50 p-4 btn btn-primary rounded">configure devices</a>
+        <a *ngIf="currentUser() == null" routerLink="/sign-in" routerLinkActive="active"
+          class="w-50 p-4 btn btn-outline-primary border border-primary rounded">sign in</a>
 
-        <a *ngIf="currentUser() == null" routerLink="/measurements" routerLinkActive="active" class="disabled w-50 p-4 btn btn-primary rounded">measurements</a>
-        <a *ngIf="currentUser() == null" routerLink="/configure-devices" routerLinkActive="active" class="disabled w-50 p-4 btn btn-primary rounded">configure devices</a>
-        <button *ngIf="currentUser() != null" (click)="logout()" class="w-50 p-4 btn btn-outline-primary border border-primary rounded">sign out</button>
+        <a *ngIf="currentUser() == null" routerLink="/measurements" routerLinkActive="active"
+          class="disabled w-50 p-4 btn btn-primary rounded">measurements</a>
+        <a *ngIf="currentUser() == null" routerLink="/configure-devices" routerLinkActive="active"
+          class="disabled w-50 p-4 btn btn-primary rounded">configure devices</a>
+        <button *ngIf="currentUser() != null" (click)="logout()"
+          class="w-50 p-4 btn btn-outline-primary border border-primary rounded">sign out</button>
 
 
       </div>

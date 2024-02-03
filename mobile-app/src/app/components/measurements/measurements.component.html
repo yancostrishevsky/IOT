@@ -31,7 +31,7 @@
           <div *ngIf="getLastHumidity() != null" class="w-100">
             <h1 class="text-center fw-light"> Last measurement at <div class="text-secondary">{{getLastHumidityDate()}}
               </div>
-              <div class="badge bg-primary">{{getLastHumidity()}}</div>
+              <div class="badge bg-primary">{{getLastHumidity()}}%</div>
             </h1>
           </div>
 
@@ -62,7 +62,7 @@
           <div *ngIf="getLastTemperature() != null" class="w-100">
             <h1 class="text-center fw-light"> Last measurement at <div class="text-secondary">
                 {{getLastTemperatureDate()}}</div>
-              <div class="badge bg-primary">{{getLastTemperature()}}</div>
+              <div class="badge bg-primary">{{getLastTemperature()}}°C</div>
             </h1>
           </div>
 

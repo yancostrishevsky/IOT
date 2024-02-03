@@ -8,6 +8,11 @@ export interface TemperatureMeasurement {
   timestamp: number;
 };
 
+export interface MovementMeasurement {
+  timestamp: number;
+  value: number;
+}
+
 export interface Measurements {
   humidity: HumidityMeasurement[];
   temperature: TemperatureMeasurement[];

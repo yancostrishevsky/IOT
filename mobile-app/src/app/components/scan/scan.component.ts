@@ -39,4 +39,10 @@ export class ScanComponent {
     setTimeout(() => { this.collectDevices() }, 6000);
   }
 
+  connectToDevice(device: GattDevice) {
+    GATT.connectToDevice(device).then((res) => {
+      console.log("Connected to device: " + device.name);
+    });
+  }
+
 }
