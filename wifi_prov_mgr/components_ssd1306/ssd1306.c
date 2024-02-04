@@ -26,7 +26,7 @@ void ssd1306_init(SSD1306_t * dev, int width, int height)
 	}
 	// Initialize internal buffer
 	for (int i=0;i<dev->_pages;i++) {
-		memset(dev->_page[i]._segs, 0, 130);
+		memset(dev->_page[i]._segs, 0, 128);
 	}
 }
 
@@ -112,58 +112,57 @@ void ssd1306_display_text(SSD1306_t * dev, int page, char * text, int text_len, 
 }
 
 // by Coert Vonk
-void 
-ssd1306_display_text_x3(SSD1306_t * dev, int page, char * text, int text_len, bool invert)
-{
-	if (page >= dev->_pages) return;
-	int _text_len = text_len;
-	if (_text_len > 5) _text_len = 5;
+void ssd1306_display_text_x3(SSD1306_t * dev, int page, char * text, int text_len, bool invert) {
+    if (page >= dev->_pages) return;
+    int _text_len = text_len;
+    if (_text_len > 8) _text_len = 8; // Modyfikacja dla większej ilości znaków przy 2x powiększeniu
 
-	uint8_t seg = 0;
+    uint8_t seg = 0;
 
-	for (uint8_t nn = 0; nn < _text_len; nn++) {
+    for (uint8_t nn = 0; nn < _text_len; nn++) {
 
-		uint8_t const * const in_columns = font8x8_basic_tr[(uint8_t)text[nn]];
+        uint8_t const * const in_columns = font8x8_basic_tr[(uint8_t)text[nn]];
 
-		// make the character 3x as high
-		out_column_t out_columns[8];
-		memset(out_columns, 0, sizeof(out_columns));
+        // Make the character 2x as high
+        out_column_t out_columns[8];
+        memset(out_columns, 0, sizeof(out_columns));
 
-		for (uint8_t xx = 0; xx < 8; xx++) { // for each column (x-direction)
+        for (uint8_t xx = 0; xx < 8; xx++) { // For each column (x-direction)
 
-			uint32_t in_bitmask = 0b1;
-			uint32_t out_bitmask = 0b111;
+            uint32_t in_bitmask = 0b1;
+            uint32_t out_bitmask = 0b11; // Zmniejszenie maski bitowej do 2x wysokości
 
-			for (uint8_t yy = 0; yy < 8; yy++) { // for pixel (y-direction)
-				if (in_columns[xx] & in_bitmask) {
-					out_columns[xx].u32 |= out_bitmask;
-				}
-				in_bitmask <<= 1;
-				out_bitmask <<= 3;
-			}
-		}
+            for (uint8_t yy = 0; yy < 8; yy++) { // For pixel (y-direction)
+                if (in_columns[xx] & in_bitmask) {
+                    out_columns[xx].u32 |= out_bitmask;
+                }
+                in_bitmask <<= 1;
+                out_bitmask <<= 2; // Przesunięcie o dwa bity dla 2x wysokości
+            }
+        }
 
-		// render character in 8 column high pieces, making them 3x as wide
-		for (uint8_t yy = 0; yy < 3; yy++)	{ // for each group of 8 pixels high (y-direction)
+        // Render character in 8 column high pieces, making them 2x as wide
+        for (uint8_t yy = 0; yy < 2; yy++) { // For each group of 8 pixels high (y-direction)
 
-			uint8_t image[24];
-			for (uint8_t xx = 0; xx < 8; xx++) { // for each column (x-direction)
-				image[xx*3+0] = 
-				image[xx*3+1] = 
-				image[xx*3+2] = out_columns[xx].u8[yy];
-			}
-			if (invert) ssd1306_invert(image, 24);
-			if (dev->_flip) ssd1306_flip(image, 24);
-			if (dev->_address == SPIAddress) {
-				spi_display_image(dev, page+yy, seg, image, 24);
-			} else {
-				i2c_display_image(dev, page+yy, seg, image, 24);
-			}
-			memcpy(&dev->_page[page+yy]._segs[seg], image, 24);
-		}
-		seg = seg + 24;
-	}
+            uint8_t image[16]; // Zmniejszenie rozmiaru obrazu do 16 dla 2x szerokości
+            for (uint8_t xx = 0; xx < 8; xx++) { // For each column (x-direction)
+                image[xx*2+0] = 
+                image[xx*2+1] = out_columns[xx].u8[yy];
+            }
+            if (invert) ssd1306_invert(image, 16);
+            if (dev->_flip) ssd1306_flip(image, 16);
+            if (dev->_address == SPIAddress) {
+                spi_display_image(dev, page+yy, seg, image, 16);
+            } else {
+                i2c_display_image(dev, page+yy, seg, image, 16);
+            }
+            memcpy(&dev->_page[page+yy]._segs[seg], image, 16);
+        }
+        seg = seg + 16; // Zwiększenie przesunięcia segmentu dla 2x szerokości
+    }
 }
+
+
 
 void ssd1306_clear_screen(SSD1306_t * dev, bool invert)
 {

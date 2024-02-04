@@ -30,7 +30,7 @@
 #define SOUND_SPEED 0.034
 #define MOVEMENT_THRESHOLD 10.0 
 #define MEASUREMENT_DELAY 500  
-#define BUTTON_PIN GPIO_NUM_0
+#define BUTTON_PIN GPIO_NUM_5
 #define DEVICE_ID "device1"
 #define PROVISIONING_PREFIX "SRM_PROV_"
 
@@ -44,7 +44,7 @@ static const char *TAG = "app";
 static EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_EVENT = BIT0;
 const esp_mqtt_client_config_t mqtt_cfg = {
-    .broker.address.hostname = "192.168.100.15", 
+    .broker.address.hostname = "172.20.10.5", 
     .broker.address.port = 1883, 
     .broker.address.transport = MQTT_TRANSPORT_OVER_TCP, 
 };
@@ -119,6 +119,23 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event) {
 }
 
 
+void button_task(void *pvParameter) {
+    while(1) {
+        if(gpio_get_level(BUTTON_PIN) == 0) { 
+            vTaskDelay(pdMS_TO_TICKS(50)); 
+            if(gpio_get_level(BUTTON_PIN) == 0) { 
+               ESP_LOGI(TAG, "Button pressed, resetting WiFi settings...");
+
+            esp_mqtt_client_stop(client);
+            ESP_ERROR_CHECK(nvs_flash_erase());
+            esp_restart();
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(100)); 
+    }
+}
+
+
 static void wifi_init_sta(void) {
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_start();
@@ -160,11 +177,11 @@ void dht_test(void *pvParameters)
             printf("reading data from sensor\n");
             ssd1306_clear_screen(&dev, false);
 	        ssd1306_contrast(&dev, 0xff);
-            char humidityBuffer[32]; // Bufor dla wilgotności
-            snprintf(humidityBuffer, sizeof(humidityBuffer), "Wilgotnosc: %.1f%%", humidity);
+            char humidityBuffer[32];
+            snprintf(humidityBuffer, sizeof(humidityBuffer), "Wilg.: %.1f%%", humidity);
             ssd1306_display_text(&dev, 0, humidityBuffer, strlen(humidityBuffer), false);
-            char temperatureBuffer[32]; // Bufor dla temperatury
-            snprintf(temperatureBuffer, sizeof(temperatureBuffer), "Temp: %.1fC", temperature);
+            char temperatureBuffer[32];
+            snprintf(temperatureBuffer, sizeof(temperatureBuffer), "Temp.: %.1fC", temperature);
             ssd1306_display_text(&dev, 1, temperatureBuffer, strlen(temperatureBuffer), false);
             memset(humidityBuffer, 0, sizeof(humidityBuffer));
             memset(temperatureBuffer, 0, sizeof(temperatureBuffer)); 
@@ -232,14 +249,10 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    gpio_reset_pin(BUTTON_PIN);
-    gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
-    gpio_pullup_en(BUTTON_PIN);
-
     xTaskCreate(ultrasonic_sensor_task, "ultrasonic_sensor_task", 4096, NULL, 5, NULL);
-
+    xTaskCreate(dht_test, "dht_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     wifi_event_group = xEventGroupCreate();
-
+    vTaskDelay(pdMS_TO_TICKS(2000)); 
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
@@ -264,7 +277,7 @@ void app_main(void) {
         wifi_prov_mgr_deinit();
         wifi_init_sta();
     }
-
+    xTaskCreate(&button_task, "button_task", 2048, NULL, 10, NULL);
     xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, true, true, portMAX_DELAY);
     int center, top, bottom;
 	char lineChar[20];
@@ -272,10 +285,8 @@ void app_main(void) {
     client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
-    xTaskCreate(dht_test, "dht_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-
     while (1) {
-        ESP_LOGI(TAG, "Running");
+        ESP_LOGI(TAG, "test");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

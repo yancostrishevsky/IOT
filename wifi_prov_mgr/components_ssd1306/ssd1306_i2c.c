@@ -5,7 +5,7 @@
 
 #include "driver/i2c.h"
 #include "esp_log.h"
-#define CONFIG_OFFSETX 0
+#define CONFIG_OFFSETX 2
 #include "ssd1306.h"
 
 #define tag "SSD1306"
