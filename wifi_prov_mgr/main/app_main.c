@@ -31,7 +31,8 @@
 #define MOVEMENT_THRESHOLD 10.0 
 #define MEASUREMENT_DELAY 500  
 #define BUTTON_PIN GPIO_NUM_0
-#define device_id "device1"
+#define DEVICE_ID "device1"
+#define PROVISIONING_PREFIX "SRM_PROV_"
 
 // MQTT configuration
 // [device_id]/temperature - float
@@ -153,8 +154,8 @@ void dht_test(void *pvParameters)
             snprintf(temperatureMessage, sizeof(temperatureMessage), "%.1f", temperature);
             snprintf(humidityMessage, sizeof(humidityMessage), "%.1f", humidity);
 
-            mqtt_publish("device1/temperature", temperatureMessage);
-            mqtt_publish("device1/humidity", humidityMessage);
+            mqtt_publish(DEVICE_ID"/temperature", temperatureMessage);
+            mqtt_publish(DEVICE_ID"/humidity", humidityMessage);
 
             printf("reading data from sensor\n");
             ssd1306_clear_screen(&dev, false);
@@ -206,7 +207,7 @@ static void ultrasonic_sensor_task(void *pvParameters) {
             printf("Ruch wykryty! W odleglosci: %.2f cm\n", distanceCm);
             char movementMessage[50];
             snprintf(movementMessage, sizeof(movementMessage), "%.2f", distanceCm);
-            mqtt_publish("device1/movement", movementMessage);
+            mqtt_publish(DEVICE_ID"/movement", movementMessage);
             gpio_set_level(BUZZER_PIN, 1); 
             vTaskDelay(1000 / portTICK_PERIOD_MS); 
             gpio_set_level(BUZZER_PIN, 0);
@@ -247,6 +248,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     bool provisioned = false;
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+
     if (!provisioned) {
         ESP_LOGI(TAG, "Starting provisioning");
         wifi_prov_mgr_config_t config = {
@@ -255,13 +257,14 @@ void app_main(void) {
         };
         ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
         wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
-        const char *pop = "device1";  // Proof of possession - device_id
-        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) pop, "PROV_", NULL));
+        const char *pop = DEVICE_ID;  // Proof of possession - device_id
+        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) pop, PROVISIONING_PREFIX, NULL));
     } else {
         ESP_LOGI(TAG, "Already provisioned, starting Wi-Fi STA");
         wifi_prov_mgr_deinit();
         wifi_init_sta();
     }
+
     xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, true, true, portMAX_DELAY);
     int center, top, bottom;
 	char lineChar[20];
@@ -270,6 +273,7 @@ void app_main(void) {
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
     xTaskCreate(dht_test, "dht_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+
     while (1) {
         ESP_LOGI(TAG, "Running");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
