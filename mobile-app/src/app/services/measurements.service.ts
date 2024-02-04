@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
-import { HumidityMeasurement, Measurements, TemperatureMeasurement } from '../interfaces/measurements';
+import { HumidityMeasurement, Measurements, MovementMeasurement, TemperatureMeasurement } from '../interfaces/measurements';
 import { Device } from '../interfaces/device';
 
 @Injectable({
@@ -26,6 +26,7 @@ export class MeasurementsService {
 
         const humidityForDevice = measurementsForDevice.humidity || {};
         const temperatureForDevice = measurementsForDevice.temperature || {};
+        const movementForDevice = measurementsForDevice.movement || {};
 
         const flattenedHumidity: HumidityMeasurement[] = [];
 
@@ -37,16 +38,24 @@ export class MeasurementsService {
 
         const flattenedTemperature: TemperatureMeasurement[] = [];
 
-        Object.keys(temperatureForDevice).forEach((humidityKey: any) => {
+        Object.keys(temperatureForDevice).forEach((temperatureKey: any) => {
           flattenedTemperature.push({
-            ...temperatureForDevice[humidityKey]
+            ...temperatureForDevice[temperatureKey]
           });
         });
 
+        const flattenedMovement: MovementMeasurement[] = [];
+
+        Object.keys(movementForDevice).forEach((movementKey: any) => {
+          flattenedMovement.push({
+            ...movementForDevice[movementKey]
+          });
+        });
 
         this.measurements[key] = {
           humidity: flattenedHumidity,
-          temperature: flattenedTemperature
+          temperature: flattenedTemperature,
+          movement: flattenedMovement
         };
       });
 

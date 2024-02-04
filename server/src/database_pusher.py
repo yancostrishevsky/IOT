@@ -11,17 +11,24 @@ class DatabasePusher:
     def __init__(self, config):
         self._config = config
 
-        cred_obj = firebase_admin.credentials.Certificate(self._config['firebase_credentials_path'])
+        cred_obj = firebase_admin.credentials.Certificate(
+            self._config["firebase_credentials_path"]
+        )
 
-        self._app = firebase_admin.initialize_app(cred_obj, {
-            'databaseURL': self._config['firebase_database_url']
-        })
+        self._app = firebase_admin.initialize_app(
+            cred_obj, {"databaseURL": self._config["firebase_database_url"]}
+        )
 
-    def message_handler(self, client: paho_client.Client, userdata, message: paho_client.MQTTMessage):
+    def message_handler(
+        self, client: paho_client.Client, userdata, message: paho_client.MQTTMessage
+    ):
         """Handler for receiving messages from mqtt broker."""
 
-        logging.debug("Received message from topic %s: %s",
-                      message.topic, message.payload.decode())
+        logging.debug(
+            "Received message from topic %s: %s",
+            message.topic,
+            message.payload.decode(),
+        )
 
         topic = message.topic.split("/")
 
@@ -32,25 +39,15 @@ class DatabasePusher:
         device_id = topic[0]
         measurement_type = topic[1]
 
-        if measurement_type == "humidity":
+        single_float_measurement_types = ("humidity", "temperature", "movement")
 
-            ref = fb_db.reference(f"/measurements/{device_id}/humidity")
+        if measurement_type in single_float_measurement_types:
 
-            ref.push().set({
-                'value': message.payload.decode(),
-                'timestamp': time.time()
-            })
+            ref = fb_db.reference(f"/measurements/{device_id}/{measurement_type}")
 
-            return
-
-        if measurement_type == "temperature":
-
-            ref = fb_db.reference(f"/measurements/{device_id}/temperature")
-
-            ref.push().set({
-                'value': message.payload.decode(),
-                'timestamp': time.time()
-            })
+            ref.push().set(
+                {"value": message.payload.decode(), "timestamp": time.time()}
+            )
 
             return
 

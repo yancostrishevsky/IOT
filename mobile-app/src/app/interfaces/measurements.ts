@@ -16,4 +16,5 @@ export interface MovementMeasurement {
 export interface Measurements {
   humidity: HumidityMeasurement[];
   temperature: TemperatureMeasurement[];
+  movement: MovementMeasurement[];
 };

@@ -75,6 +75,38 @@
         </div>
       </div>
     </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingThree">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+          data-bs-target="#collapseThree">
+          Movement
+        </button>
+      </h2>
+      <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#measurementsAccordion">
+        <div class="accordion-body">
+          <!-- <div *ngFor="let measurement of (measurements?.temperature)" class="mt-2">
+            <div class="d-flex w-100 gap-3 justify-content-between"><span class="fw-light">timestamp:</span><span class="">{{measurement.timestamp}}</span></div>
+
+            <div class="d-flex w-100 gap-3 justify-content-between"><span class="fw-light">value:</span><span class="">{{measurement.value}}°C</span></div>
+          </div> -->
+
+          <div *ngIf="getLastMovement() != null" class="w-100">
+            <h1 class="text-center fw-light"> Last measurement at <div class="text-secondary">
+                {{getLastMovementDate()}}</div>
+              <div class="badge bg-primary">{{getLastMovement()}}cm</div>
+            </h1>
+          </div>
+
+          <div class="chart-container w-100" style="overflow-x: auto;">
+            <div style="height: 300px; min-width: 100%;" class="p-3" [style]="{width: movementChartWidth()}">
+              <canvas id="movementChart"> {{movementChart}} </canvas>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>

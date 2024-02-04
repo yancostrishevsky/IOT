@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { Device } from '../../interfaces/device';
-import { HumidityMeasurement, Measurements } from '../../interfaces/measurements';
+import { HumidityMeasurement, Measurements, MovementMeasurement } from '../../interfaces/measurements';
 import { MeasurementsService } from '../../services/measurements.service';
 import { DevicesService } from '../../services/devices.service';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
@@ -21,6 +21,7 @@ export class MeasurementsComponent {
   measurements: Measurements | null = null;
   humidityChart: any = null;
   temperatureChart: any = null;
+  movementChart: any = null;
 
   constructor(private activatedRoute: ActivatedRoute, private measurementsService: MeasurementsService, private devicesService: DevicesService, private db: AngularFireDatabase) {
 
@@ -36,6 +37,7 @@ export class MeasurementsComponent {
 
           this.updateHumidityChart();
           this.updateTemperatureChart();
+          this.updateMovementChart();
         });
       });
     });
@@ -45,6 +47,7 @@ export class MeasurementsComponent {
     if (this.measurements) {
       this.updateHumidityChart();
       this.updateTemperatureChart();
+      this.updateMovementChart();
     }
   }
 
@@ -123,12 +126,50 @@ export class MeasurementsComponent {
     }
   }
 
+  updateMovementChart() {
+    if (this.measurements) {
+      const movementData = this.measurements.movement;
+      const labels = movementData.map((measurement: MovementMeasurement) => this.timestampToDate(measurement.timestamp));
+      const values = movementData.map((measurement: MovementMeasurement) => measurement.value);
+
+      this.movementChart = new Chart('movementChart', {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Detected movement distance (cm)',
+              data: values,
+              pointBackgroundColor: 'black',
+              pointRadius: 5,
+              fill: false,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+  }
+
   humidityChartWidth() {
     return ((this.measurements?.humidity.length || 0) * 50) + 'px';
   }
 
   temperatureChartWidth() {
     return ((this.measurements?.temperature.length || 0) * 100) + 'px';
+  }
+
+  movementChartWidth() {
+    return ((this.measurements?.movement.length || 0) * 30) + 'px';
   }
 
   getLastHumidityDate(): string | null {
@@ -158,6 +199,22 @@ export class MeasurementsComponent {
   getLastTemperature(): number | null {
     if (this.measurements?.temperature != null) {
       return this.measurements.temperature[this.measurements.temperature.length - 1].value;
+    }
+
+    return null;
+  }
+
+  getLastMovement(): number | null {
+    if (this.measurements?.movement != null) {
+      return this.measurements.movement[this.measurements.movement.length - 1].value;
+    }
+
+    return null;
+  }
+
+  getLastMovementDate(): string | null {
+    if (this.measurements) {
+      return this.timestampToDate(this.measurements.movement[this.measurements.movement.length - 1].timestamp);
     }
 
     return null;
