@@ -32,7 +32,7 @@
 #define MEASUREMENT_DELAY 500  
 #define BUTTON_PIN GPIO_NUM_0
 #define DEVICE_ID "device1"
-#define PROVISIONING_PREFIX "SRM_PROV_"
+#define PROVISIONING_PREFIX "SMR_device1"
 
 // MQTT configuration
 // [device_id]/temperature - float
@@ -44,7 +44,7 @@ static const char *TAG = "app";
 static EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_EVENT = BIT0;
 const esp_mqtt_client_config_t mqtt_cfg = {
-    .broker.address.hostname = "192.168.100.15", 
+    .broker.address.hostname = "192.168.43.111", 
     .broker.address.port = 1883, 
     .broker.address.transport = MQTT_TRANSPORT_OVER_TCP, 
 };
