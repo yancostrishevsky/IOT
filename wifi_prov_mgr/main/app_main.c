@@ -29,7 +29,7 @@
 #define BUZZER_PIN 32
 #define SOUND_SPEED 0.034
 #define MOVEMENT_THRESHOLD 10.0
-#define MEASUREMENT_DELAY 500
+#define MEASUREMENT_DELAY 20000
 #define BUTTON_PIN GPIO_NUM_5
 #define DEVICE_ID "device1"
 #define PROVISIONING_PREFIX "SMR_device1"
@@ -44,8 +44,10 @@ static EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_EVENT = BIT0;
 const esp_mqtt_client_config_t mqtt_cfg = {
     .broker.address.hostname = "192.168.43.111",
-    .broker.address.port = 1883,
+    .broker.address.port = 8126,
     .broker.address.transport = MQTT_TRANSPORT_OVER_TCP,
+    .credentials = {.username = DEVICE_ID,
+                    .authentication = {.password = DEVICE_ID}},
 };
 esp_mqtt_client_handle_t client = NULL;
 
