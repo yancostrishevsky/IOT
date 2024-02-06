@@ -15,7 +15,7 @@ export class HomeComponent {
   constructor(private usersService: UsersService) { }
 
   ngOnInit() {
-    this.usersService.signIn("piktonproso@gmail.com", "admin123");
+    // this.usersService.signIn("piktonproso@gmail.com", "admin123");
   }
 
 
