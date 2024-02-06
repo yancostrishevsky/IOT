@@ -45,9 +45,15 @@ export class DevicesService {
     });
   }
 
-  getDevice(name: string) : Device | null {
+  getDevice(name: string): Device | null {
     return this.devices.find((device: Device) => {
       return device.name == name;
+    }) || null;
+  }
+
+  getDeviceByAddress(address: string): Device | null {
+    return this.devices.find((device: Device) => {
+      return device.mac == address;
     }) || null;
   }
 }

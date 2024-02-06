@@ -25,7 +25,7 @@ export class UsersService {
 
         const user = data[key];
 
-        if(user.availableDevices == undefined) {
+        if (user.availableDevices == undefined) {
           user.availableDevices = [];
         }
 
@@ -45,7 +45,7 @@ export class UsersService {
           return u.email == user.email;
         });
 
-        this.currentUser =  foundUser == undefined ? null : foundUser;
+        this.currentUser = foundUser == undefined ? null : foundUser;
       });
     });
 
@@ -100,5 +100,13 @@ export class UsersService {
 
   deleteOwnership(user: User, deviceName: string) {
     this.db.object('users/' + user.id + '/availableDevices').set(user.availableDevices.filter((device: string) => device != deviceName));
+  }
+
+  addOwnership(user: User | null, deviceName: string) {
+    if (user == null) {
+      return;
+    }
+
+    this.db.object('users/' + user.id + '/availableDevices').set([...user.availableDevices, deviceName]);
   }
 }
