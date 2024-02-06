@@ -20,7 +20,9 @@ public class GATTPlugin extends Plugin {
 
   ESPProvisionManager manager_;
   GattListener listener_ = new GattListener();
-  GattConnector connector_;
+  ProvisioningConnector provisioningConnector_;
+
+  BondingConnector bondingConnector_;
 
   private ESPProvisionManager _getEspManager() {
     if (manager_ == null) {
@@ -59,14 +61,65 @@ public class GATTPlugin extends Plugin {
   }
 
   @PluginMethod()
-  public void connectToDevice(PluginCall call) {
+  public void tryToProvision(PluginCall call) {
 
-    JSObject soughtAddress = call.getData();
+    JSObject soughtDevice = call.getObject("device");
+    String proofOfPossession = call.getString("proofOfPossession");
+    String ssid = call.getString("ssid");
+    String password = call.getString("password");
 
-    connector_ = new GattConnector(soughtAddress, _getEspManager());
+    System.out.println(soughtDevice.toString());
+    System.out.println(proofOfPossession);
+    System.out.println(ssid);
+    System.out.println(password);
 
-    _getEspManager().searchBleEspDevices(connector_);
+    provisioningConnector_ = new ProvisioningConnector(soughtDevice, manager_, ssid, password, proofOfPossession);
+
+    _getEspManager().searchBleEspDevices(provisioningConnector_);
 
     call.resolve();
   }
+
+  @PluginMethod()
+  public void passedCorrectPop(PluginCall call) {
+
+    JSObject ret = new JSObject();
+    ret.put("value", provisioningConnector_.passedCorrectPop());
+
+    call.resolve(ret);
+  }
+
+  @PluginMethod()
+  public void isProvisioningSuccessful(PluginCall call) {
+
+    JSObject ret = new JSObject();
+    ret.put("value", provisioningConnector_.provisionedSuccessfully());
+
+    call.resolve(ret);
+  }
+
+  @PluginMethod()
+  public void tryToBond(PluginCall call) {
+
+    JSObject soughtDevice = call.getObject("device");
+    String proofOfPossession = call.getString("proofOfPossession");
+
+    bondingConnector_ = new BondingConnector(soughtDevice, manager_, proofOfPossession);
+
+    _getEspManager().searchBleEspDevices(bondingConnector_);
+
+    call.resolve();
+  }
+
+  @PluginMethod()
+  public void isBondingSuccessful(PluginCall call) {
+
+    JSObject ret = new JSObject();
+    ret.put("value", bondingConnector_.isBondingSuccessful());
+
+    call.resolve(ret);
+  }
+
+
+
 }

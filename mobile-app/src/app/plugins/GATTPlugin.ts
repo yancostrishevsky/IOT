@@ -3,12 +3,19 @@ import { registerPlugin } from "@capacitor/core";
 export interface GattDevice {
   name: string;
   address: string;
+  isConnectable: boolean;
 };
 
 export interface GATTPlugin {
   getAvailableDevices(): Promise<{ devices: GattDevice[] }>;
   startScanning(): Promise<{}>;
-  connectToDevice(device: GattDevice): Promise<{}>;
+
+  tryToProvision(options: { device: GattDevice, proofOfPossession: String, ssid: String, password: String }): Promise<{}>;
+  passedCorrectPop(): Promise<{ value: boolean }>;
+  isProvisioningSuccessful(): Promise<{ value: boolean }>;
+
+  tryToBond(options: { device: GattDevice, proofOfPossession: boolean }): Promise<{}>;
+  isBondingSuccessful(): Promise<{ value: boolean }>;
 }
 
 class MockGATT implements GATTPlugin {
@@ -16,15 +23,9 @@ class MockGATT implements GATTPlugin {
   async getAvailableDevices(): Promise<{ devices: GattDevice[] }> {
     return {
       devices: [
-        { name: "Device 1", address: "00:00:00:00:00:00" },
-        { name: "Device 2", address: "00:00:00:00:00:01" },
-        { name: "Device 3", address: "00:00:00:00:00:02" },
-        { name: "Device 4", address: "00:00:00:00:00:03" },
-        { name: "Device 5", address: "00:00:00:00:00:04" },
-        { name: "Device 6", address: "00:00:00:00:00:05" },
-        { name: "Device 7", address: "00:00:00:00:00:06" },
-        { name: "Device 8", address: "00:00:00:00:00:07" },
-        { name: "Device 9", address: "00:00:00:00:00:08" },
+        { name: "device1", address: "00:00:00:00:00:00", isConnectable: true },
+        { name: "device43", address: "00:00:00:00:00:01", isConnectable: false },
+        { name: "device2", address: "00:00:00:00:00:02", isConnectable: true },
       ]
     };
   }
@@ -36,6 +37,24 @@ class MockGATT implements GATTPlugin {
   async connectToDevice(device: GattDevice): Promise<{}> {
     return {};
   }
+
+  async tryToProvision(options: { device: GattDevice, proofOfPossession: String, ssid: String, password: String }): Promise<{}> { return {}; }
+
+  async passedCorrectPop(): Promise<{ value: boolean }> {
+    return { value: false };
+  }
+
+  async isProvisioningSuccessful(): Promise<{ value: boolean }> {
+    return { value: false };
+  }
+
+  async tryToBond(options: { device: GattDevice, proofOfPossession: boolean }): Promise<{}> { return {}; }
+
+  async isBondingSuccessful(): Promise<{ value: boolean }> {
+    return { value: true };
+  }
+
+
 }
 
 

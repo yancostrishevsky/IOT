@@ -8,6 +8,8 @@ import com.espressif.provisioning.listeners.BleScanListener;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 
+import org.json.JSONException;
+
 import java.io.Console;
 
 public class GattListener implements BleScanListener {
@@ -30,6 +32,25 @@ public class GattListener implements BleScanListener {
     JSObject deviceObj = new JSObject();
     deviceObj.put("name", device.getName());
     deviceObj.put("address", device.getAddress());
+    deviceObj.put("isConnectable", true);
+
+    for(int deviceIdx = 0; deviceIdx < devices_.length(); deviceIdx++)
+    {
+      try {
+        String deviceAddress = ((JSObject) (devices_.get(deviceIdx))).getString("address");
+
+        if(deviceAddress.equals(device.getAddress()))
+        {
+          return;
+        }
+      }
+      catch(JSONException e)
+      {
+        break;
+      }
+
+
+    }
 
     devices_.put(deviceObj);
   }
